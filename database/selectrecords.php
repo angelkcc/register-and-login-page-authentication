@@ -16,10 +16,10 @@ while($row=$result->fetch_assoc()){ //this will now fetch all the rows one by on
     echo "</pre>";
 }*/
 require_once "connection.php";
-$searchQuery="A";
+$searchQuery="An" . "%";
 $selectSql="SELECT * FROM users where fullname LIKE ?";
 $preparedStatement=$connection->prepare($selectSql);
-$preparedStatement->bind_param('s',$searchQuery.'%');
+$preparedStatement->bind_param('s',$searchQuery); 
 $preparedStatement->execute();
 $result=$preparedStatement->get_result();
 

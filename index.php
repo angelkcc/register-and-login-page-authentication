@@ -6,10 +6,10 @@
 //handle post request
 //ternary operator to perform isset
 //if(isset..) else but we use ternary
+require "./database/connection.php";
 if($_SERVER['REQUEST_METHOD']=="POST")
     {
     $formData=$_POST;
-    $registeredemail=["john@gmail.com"];
     //print_r($formData);
     $name=htmlspecialchars(trim($formData['fullname'])); //trim removes space
     $email=trim($formData['email']);
@@ -34,9 +34,16 @@ if($_SERVER['REQUEST_METHOD']=="POST")
         {
             $errors['email']="Invalid email format";
         }
-    else if(in_array($email,$registeredemail))
-        {
-            $errors['email']="email already exists";
+        else{//check with database
+            $userExistsSql="SELECT *from users where email=?";
+            $userExistsStmt=$connection->prepare($userExistsSql);
+            $userExistsStmt->bind_param("s",$email);
+            $userExistsStmt->execute();
+            $result=$userExistsStmt->get_result();
+            if($result->num_rows>0)
+                {
+                    $errors['email']="email already exists";
+                }
         }
     
     //password validation
@@ -57,11 +64,23 @@ if($_SERVER['REQUEST_METHOD']=="POST")
     if(empty($errors))//gives true of [].0,null or even when no variable set 
     {
         //form is valid.proceed with form handling
-
-
+       /* include "database.php";
+        $db= new Database("localhost","root","Nepal@123","web",3306); //here is error because we have not included database.php fileso to inclid
+        $result=$db->insert("users",[ 
+            "name"=>$name,
+            "email"=>$email,
+            "password"=>$password
+        ]);*/
+        $insertSql="INSERT INTO users (fullname,email,password) VALUES (?,?,?)";
+        $preparedStatement=$connection->prepare($insertSql); 
+        $preparedStatement->bind_param("sss",$name,$email,$password);
+        $result=$preparedStatement->execute();
+        if($result)
+        {
+            header("Location:/login.php");
+        }
     }
     }
-    
 ?>
 
 

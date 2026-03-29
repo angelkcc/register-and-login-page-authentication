@@ -1,5 +1,6 @@
 <!--php code server side authetication-->
 <?php
+require "./database/connection.php";
 session_start(); //to start session
 if(isset($_SESSION['userislogin'])&& $_SESSION['userislogin']==true)
     {
@@ -21,8 +22,6 @@ if(isset($_SESSION['userislogin'])&& $_SESSION['userislogin']==true)
 if($_SERVER['REQUEST_METHOD']=="POST")
     {
     $formData=$_POST;
-    $registeredusers=[
-        "john@gmail.com"=>"abc12345"];
     //print_r($formData);
     $email=trim($formData['email']);
     $password=$formData['password'];
@@ -37,10 +36,17 @@ if($_SERVER['REQUEST_METHOD']=="POST")
         {
             $errors['email']="Invalid email format";
         }
-    else if(!in_array($email,array_keys($registeredusers)))
-        {
-            $errors['email']="email not found";
-        }
+    else { //database verify
+          $userExistsSql="SELECT *from users where email=?";
+            $userExistsStmt=$connection->prepare($userExistsSql);
+            $userExistsStmt->bind_param("s",$email);
+            $userExistsStmt->execute();
+            $result=$userExistsStmt->get_result();
+            if($result->num_rows==0)
+                {
+                    $errors['email']="email not found";
+                }
+    }
     
     //password validation
     if($password=="")
@@ -51,7 +57,12 @@ if($_SERVER['REQUEST_METHOD']=="POST")
     {
         //form is valid.proceed with form handling
         //password check
-        if($password==$registeredusers[$email])
+          $userExistsSql="SELECT *from users where email=? and password=?";
+            $userExistsStmt=$connection->prepare($userExistsSql);
+            $userExistsStmt->bind_param("ss",$email,$password);
+            $userExistsStmt->execute();
+            $result=$userExistsStmt->get_result();
+        if($result->num_rows>0)
             {
                 //login
                 $_SESSION['userislogin']=true; //lets enter homepage only if user is logged in and pw is correct
